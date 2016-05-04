@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <sstream>
 #include <vector>
-#include <time.h>
 
 #include "board.h"
 
@@ -21,129 +20,134 @@ using ::std::transform;
 using ::std::vector;
 
 namespace tictactoe {
-
-vector<string> &split(const string &s, char delim, vector<string> &elems) {
+  
+  vector<string> &split(const string &s, char delim, vector<string> &elems) {
     stringstream ss(s);
     string item;
     elems.clear();
     while (getline(ss, item, delim)) {
-        elems.push_back(item);
+      elems.push_back(item);
     }
     return elems;
-}
-
-int stringToInt(const string &s) {
+  }
+  
+  int stringToInt(const string &s) {
     istringstream ss(s);
     int result;
     ss >> result;
     return result;
-}
-
-class BotIO {
-public:
+  }
+  
+  class BotIO {
+  public:
     
     /**
      * Initialize your bot here.
      */
     BotIO() {
-        srand(static_cast<unsigned int>(time(0)));
-        _field.resize(81);
-        _macroboard.resize(9);
+      srand(static_cast<unsigned int>(time(0)));
+      _field.resize(81);
+      _macroboard.resize(9);
     }
     
     
     void loop() {
-        string line;
-        vector<string> command;
-        command.reserve(256);
-        
-        while (getline(cin, line)) {
-            processCommand(split(line, ' ', command));
-        }
+      string line;
+      vector<string> command;
+      command.reserve(256);
+      
+      while (getline(cin, line)) {
+        processCommand(split(line, ' ', command));
+      }
     }
     
-private:
+  private:
     pair<int, int> action(const string &type, int time) {
-        /**
-         * Implement this function.
-         * type is always "move"
-         *
-         * return value must be position in x,y presentation
-         *      (use std::make_pair(x, y))
-         */
-        
-        return getRandomFreeCell();
+      /**
+       * Implement this function.
+       * type is always "move"
+       *
+       * return value must be position in x,y presentation
+       *      (use std::make_pair(x, y))
+       */
+      
+      return getMove(time);
     }
     
-    pair<int, int> getRandomFreeCell() const {
-        debug("Using random algorithm.");
-        Board board(_field, _macroboard, _move);
-        vector<pair<int, int>> freeCells = board.allowed_moves();
-        return freeCells[rand()%freeCells.size()];
+    pair<int, int> getMove(int time) const {
+      Board board(_field, _macroboard);
+      debug(board.toString());
+      Board::Move move = board.get_best_move((Board::Player)_botId, 10);
+      int i = move.first;
+      int j = move.second;
+      
+      const auto out = make_pair(3 * (i/3) + j / 3, 3 * (i % 3) + j % 3);
+      debug("move: " +  ::std::to_string(i) + ", " + ::std::to_string(j) + " => " + ::std::to_string(out.first) + ", " + ::std::to_string((out.second)));
+      return out;
     }
     
     void processCommand(const vector<string> &command) {
-        if (command[0] == "action") {
-            auto point = action(command[1], stringToInt(command[2]));
-            cout << "place_move " << point.first << " " << point.second << endl << flush;
-        }
-        else if (command[0] == "update") {
-            update(command[1], command[2], command[3]);
-        }
-        else if (command[0] == "settings") {
-            setting(command[1], command[2]);
-        }
-        else {
-            debug("Unknown command <" + command[0] + ">.");
-        }
+      if (command[0] == "action") {
+        auto point = action(command[1], stringToInt(command[2]));
+        cout << "place_move " << point.first << " " << point.second << endl << flush;
+      }
+      else if (command[0] == "update") {
+        update(command[1], command[2], command[3]);
+      }
+      else if (command[0] == "settings") {
+        setting(command[1], command[2]);
+      }
+      else {
+        debug("Unknown command <" + command[0] + ">.");
+      }
     }
     
     void update(const string& player, const string& type, const string& value) {
-        if (player != "game" && player != _myName) {
-            // It's not my update!
-            return;
-        }
-        if (type == "round") {
-            _round = stringToInt(value);
-        } else if (type == "move") {
-            _move = stringToInt(value);
-        } else if (type == "macroboard" || type == "field") {
-            vector<string> rawValues;
-            split(value, ',', rawValues);
-            vector<int>::iterator choice = (type == "field" ? _field.begin() : _macroboard.begin());
-            transform(rawValues.begin(), rawValues.end(), choice, stringToInt);
-        }
-        else {
-            debug("Unknown update <" + type + ">.");
-        }
+      if (player != "game" && player != _myName) {
+        // It's not my update!
+        return;
+      }
+      if (type == "round") {
+        _round = stringToInt(value);
+      } else if (type == "move") {
+        _move = stringToInt(value);
+      } else if (type == "macroboard" || type == "field") {
+        vector<string> rawValues;
+        split(value, ',', rawValues);
+        vector<int>::iterator choice = (type == "field" ? _field.begin() : _macroboard.begin());
+        transform(rawValues.begin(), rawValues.end(), choice, stringToInt);
+      }
+      else {
+        debug("Unknown update <" + type + ">.");
+      }
     }
     
     void setting(const string& type, const string& value) {
-        if (type == "timebank") {
-            _timebank = stringToInt(value);
-        }
-        else if (type == "time_per_move") {
-            _timePerMove = stringToInt(value);
-        }
-        else if (type == "player_names") {
-            split(value, ',', _playerNames);
-        }
-        else if (type == "your_bot") {
-            _myName = value;
-        }
-        else if (type == "your_botid") {
-            _botId = stringToInt(value);
-        }
-        else {
-            debug("Unknown setting <" + type + ">.");
-        }
+      if (type == "timebank") {
+        _timebank = stringToInt(value);
+      }
+      else if (type == "time_per_move") {
+        _timePerMove = stringToInt(value);
+      }
+      else if (type == "player_names") {
+        split(value, ',', _playerNames);
+      }
+      else if (type == "your_bot") {
+        _myName = value;
+      }
+      else if (type == "your_botid") {
+        _botId = stringToInt(value);
+      }
+      else {
+        debug("Unknown setting <" + type + ">.");
+      }
     }
     
     void debug(const string &s) const{
-        cerr << s << endl << flush;
+      cerr << s << endl << flush;
     }
     
-private:
+  private:
     // static settings
     int _timebank;
     int _timePerMove;
@@ -156,8 +160,8 @@ private:
     int _move;
     vector<int> _macroboard;
     vector<int> _field;
-};
-
+  };
+  
 }  // namespace tictactoe
 
 /**
@@ -165,7 +169,7 @@ private:
  * See BotIO::action method.
  **/
 int main() {
-    ::tictactoe::BotIO bot;
-    bot.loop();
-    return 0;
+  ::tictactoe::BotIO bot;
+  bot.loop();
+  return 0;
 }
