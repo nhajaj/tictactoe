@@ -77,7 +77,7 @@ namespace tictactoe {
     pair<int, int> getMove(int time) const {
       Board board(_field, _macroboard);
       debug(board.toString());
-      Board::Move move = board.get_best_move((Board::Player)_botId, 10);
+      Board::Move move = board.get_best_move((Board::Player)_botId, 6);
       int i = move.first;
       int j = move.second;
       

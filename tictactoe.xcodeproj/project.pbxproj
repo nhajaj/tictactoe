@@ -26,8 +26,8 @@
 /* Begin PBXFileReference section */
 		576830801CD1DEB9005C75C2 /* tictactoe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tictactoe; sourceTree = BUILT_PRODUCTS_DIR; };
 		576830831CD1DEB9005C75C2 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		5768308A1CD1E01A005C75C2 /* board.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = board.h; path = ../board.h; sourceTree = "<group>"; };
 		5768308B1CD2C4CB005C75C2 /* board.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = board.cpp; sourceTree = "<group>"; };
+		576830911CD9A3B7005C75C2 /* board.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = board.h; path = tictactoe/board.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +44,7 @@
 		576830771CD1DEB9005C75C2 = {
 			isa = PBXGroup;
 			children = (
+				576830911CD9A3B7005C75C2 /* board.h */,
 				576830821CD1DEB9005C75C2 /* tictactoe */,
 				576830811CD1DEB9005C75C2 /* Products */,
 			);
@@ -60,7 +61,6 @@
 		576830821CD1DEB9005C75C2 /* tictactoe */ = {
 			isa = PBXGroup;
 			children = (
-				5768308A1CD1E01A005C75C2 /* board.h */,
 				5768308B1CD2C4CB005C75C2 /* board.cpp */,
 				576830831CD1DEB9005C75C2 /* main.cpp */,
 			);

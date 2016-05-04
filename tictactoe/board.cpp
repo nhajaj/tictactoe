@@ -72,9 +72,11 @@ namespace tictactoe {
   
   namespace {
     array<pair<double, double>, 64> init_row_values() {
-      static const double one_value = 0.03;
-      static const double two_value = 0.15;
+      static const double zero_value = 0.0625;
+      static const double one_value = 0.125;
+      static const double two_value = 0.25;
       array<pair<double, double>, 64> values = { pair<double, double>(0., 0.) };
+      values[0].first =  values[0].second = zero_value;
       for (int i = 0; i < 3; ++i) {
         int row = 1 << (2*i);
         values[row].first = one_value;
@@ -303,10 +305,9 @@ namespace tictactoe {
   }
   
   namespace {
-    double eval_row_evals(pair<double, double> *e123) {
+    double eval_row_evals(const pair<double, double> *e123) {
       static const double multiplier = 0.125;
-      
-      return multiplier * (e123[0].first * e123[2].first * e123[2].first - e123[0].second * e123[2].second * e123[2].second);
+      return multiplier * (e123[0].first * e123[1].first * e123[2].first - e123[0].second * e123[1].second * e123[2].second);
     }
   }
   
@@ -320,7 +321,7 @@ namespace tictactoe {
     if (done()) {
       return 0;
     }
-    double value = 0.000001 * ((rand() % 100) - 50);
+    double value = 0.00000001 * ((rand() % 100) - 50);
     pair<double, double> evals[9];
     for (int i = 0; i < 9; ++i) {
       evals[i] = board_[i].value.back();
@@ -368,7 +369,16 @@ namespace tictactoe {
       }
       out += "\n";
     }
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        const pair<double, double>& value = board_[3*i + j].value.back();
+        out += "(" + to_string(value.first) + ", " +  to_string(value.second) + ") ";
+      }
+      out += "\n";
+    }
+
     out += "next: " + to_string(next_board_.back()) + "\n";
+    out += "eval: " + to_string(eval()) + "\n";
     return out;
   }
   
