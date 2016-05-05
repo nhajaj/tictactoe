@@ -13,11 +13,13 @@ using ::std::flush;
 using ::std::getline;
 using ::std::istringstream;
 using ::std::make_pair;
+using ::std::min;
 using ::std::pair;
 using ::std::string;
 using ::std::stringstream;
 using ::std::transform;
 using ::std::vector;
+
 
 namespace tictactoe {
   
@@ -70,19 +72,17 @@ namespace tictactoe {
        * return value must be position in x,y presentation
        *      (use std::make_pair(x, y))
        */
-      
       return getMove(time);
     }
     
     pair<int, int> getMove(int time) const {
       Board board(_field, _macroboard);
-      debug(board.toString());
-      Board::Move move = board.get_best_move((Board::Player)_botId, 6);
+      // debug(board.toString());
+      Board::Move move = board.get_best_move((Board::Player)_botId, 8, min(1000, time / 2));
       int i = move.first;
       int j = move.second;
       
-      const auto out = make_pair(3 * (i/3) + j / 3, 3 * (i % 3) + j % 3);
-      debug("move: " +  ::std::to_string(i) + ", " + ::std::to_string(j) + " => " + ::std::to_string(out.first) + ", " + ::std::to_string((out.second)));
+      const auto out = make_pair(3 * (i % 3) + j % 3, 3 * (i/3) + j / 3);
       return out;
     }
     

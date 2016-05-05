@@ -6,19 +6,21 @@
 //  Copyright © 2016 Nissan Hajaj. All rights reserved.
 //
 
-#include <iostream>
-
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <chrono>
 #include <cstdlib>
 #include <functional>
+#include <iostream>
 #include <string>
 #include <tuple>
 #include "board.h"
 
 using ::std::array;
+using ::std::chrono::milliseconds;
+using ::std::chrono::steady_clock;
 using ::std::get;
 using ::std::greater;
 using ::std::make_pair;
@@ -41,9 +43,9 @@ namespace tictactoe {
         board_[bb].add(b, (Player) field[((bbi * 3 + bi) * 3 + bbj) * 3 + bj]);
       }
       board_[bb].update_value();
-      if (board_[bb].done) {
-        debug(to_string(bb) + " done = " + to_string(board_[bb].winner) + ", " + to_string(board_[bb].count));
-      }
+      // if (board_[bb].done) {
+      //   debug(to_string(bb) + " done = " + to_string(board_[bb].winner) + ", " + to_string(board_[bb].count));
+      // }
     }
     int last = -1;
     for (int bb = 0; bb < 9; ++bb) {
@@ -72,9 +74,10 @@ namespace tictactoe {
   
   namespace {
     array<pair<double, double>, 64> init_row_values() {
-      static const double zero_value = 0.0625;
-      static const double one_value = 0.125;
-      static const double two_value = 0.25;
+      static const double mult = 0.125;
+      static const double zero_value = mult * 0.125;
+      static const double one_value = mult * 0.25;
+      static const double two_value = mult * 0.5;
       array<pair<double, double>, 64> values = { pair<double, double>(0., 0.) };
       values[0].first =  values[0].second = zero_value;
       for (int i = 0; i < 3; ++i) {
@@ -130,7 +133,7 @@ namespace tictactoe {
     }
     
   }  // namespace
-
+  
   
   void  Board::SmallBoard::update_value() {
     winner = calc_winner();
@@ -185,24 +188,27 @@ namespace tictactoe {
         }
       }
     }
-    if (rv.empty()) {
-      debug(">>> no moves: " + to_string(next_board_.back()) + "\n" + toString());
-    }
+    /*
+     if (rv.empty()) {
+     debug(">>> no moves: " + to_string(next_board_.back()) + "\n" + toString());
+     }
+     */
     return rv;
   }
   
-  Board::Move Board::get_best_move(Board::Player player, int level) {
+  Board::Move Board::get_best_move(Board::Player player, int level, int time_ms) {
+    start_time_ = steady_clock::now();
+    remaining_time_ms_ = time_ms;
     if (count_ == 0) {
       return Move(4, rand() % 9);
     }
     if (count_ == 1) {
       level = min(level, 1);
     }
-  
-    if (player == FIRST) {
-      return get_first_move(level).first;
-    }
-    return get_second_move(level).first;
+    
+    pair<Board::Move, double> best = (player == FIRST) ? get_first_move(level) : get_second_move(level);
+    // debug("best move value: " + to_string(best.second));
+    return best.first;
   }
   
   pair<Board::Move, double> Board::get_first_move(int level, double prune_value) {
@@ -234,6 +240,10 @@ namespace tictactoe {
           if (best.second > prune_value) {
             break;
           }
+        }
+        if ((steady_clock::now() - start_time_) > milliseconds(remaining_time_ms_)) {
+          // debug("break");
+          break;
         }
       }
     } else {
@@ -269,6 +279,10 @@ namespace tictactoe {
           if (best.second < prune_value) {
             break;
           }
+        }
+        if ((steady_clock::now() - start_time_) > milliseconds(remaining_time_ms_)) {
+          // debug("break" + to_string(best.first.first) + ", " + to_string(best.second));
+          break;
         }
       }
     } else {
@@ -325,9 +339,19 @@ namespace tictactoe {
     pair<double, double> evals[9];
     for (int i = 0; i < 9; ++i) {
       evals[i] = board_[i].value.back();
-      if (evals[i].first > 1.0 || evals[i].second > 1.0) {
-        debug(">>> eval[" + to_string(i) +"]= " + to_string(evals[i].first) + ", " + to_string(evals[i].second) + "\n" + toString());
-      }
+      /*
+       if (evals[i].first > 1.0 || evals[i].second > 1.0) {
+       debug(">>> eval[" + to_string(i) +"]= " + to_string(evals[i].first) + ", " + to_string(evals[i].second) + "\n");
+       string out;
+       for (int ii = 0; ii < 3; ++ii) {
+       for (int jj = 0; jj < 3; ++jj) {
+       out += board_[i].at(3*ii + jj) == NONE ? "_ " : (((board_[i].at(3*ii + jj) == FIRST) ? "X " : "O "));
+       }
+       out += "\n";
+       }
+       debug(out);
+       }
+       */
     }
     
     pair<double, double> row[3], col[3];
@@ -341,9 +365,11 @@ namespace tictactoe {
     row[0] = evals[0]; row[1] = evals[4]; row[2] = evals[8];
     col[0] = evals[2]; col[1] = evals[4]; col[2] = evals[6];
     value += eval_row_evals(row) + eval_row_evals(col);
-    if (fabs(value) >= 1.0) {
-      debug(">>> eval= " + to_string(value) + "\n" + toString());
-    }
+    /*
+     if (fabs(value) >= 1.0) {
+     debug(">>> eval= " + to_string(value) + "\n" + toString());
+     }
+     */
     return value;
   }
   
@@ -371,12 +397,15 @@ namespace tictactoe {
     }
     for (int i = 0; i < 3; ++i) {
       for (int j = 0; j < 3; ++j) {
+        // if (board_[3*i + j].value.empty()) {
+        //   debug("empty value");
+        // }
         const pair<double, double>& value = board_[3*i + j].value.back();
         out += "(" + to_string(value.first) + ", " +  to_string(value.second) + ") ";
       }
       out += "\n";
     }
-
+    
     out += "next: " + to_string(next_board_.back()) + "\n";
     out += "eval: " + to_string(eval()) + "\n";
     return out;

@@ -8,7 +8,7 @@
 
 #ifndef board_h
 #define board_h
-
+#include <chrono>
 #include <utility>
 #include <vector>
 
@@ -20,7 +20,7 @@ namespace tictactoe {
     typedef ::std::pair<int, int> Move;
     ::std::vector<Move> allowed_moves() const;
     double eval() const;
-    Move get_best_move(Player player, int level);
+    Move get_best_move(Player player, int level, int time_ms = 86400000);
     ::std::string toString() const;
     void debug(const ::std::string &s) const;
     
@@ -37,7 +37,7 @@ namespace tictactoe {
       void pop(int pos);
       double get_value1() const { return value.empty() ? 0 : value.back().first; }
       double get_value2() const { return value.empty() ? 0 : value.back().second; }
-
+      
       Player at(int pos) const { return (Player) ((board & (0x3 << (2 * pos))) >> (2 * pos)); }
       bool isfree(int pos) const { return !(board & (0x3 << (2 * pos))); }
       Player calc_winner();
@@ -53,6 +53,8 @@ namespace tictactoe {
     SmallBoard board_[9];
     ::std::vector<int> next_board_;
     int count_;
+    ::std::chrono::steady_clock::time_point start_time_;
+    int remaining_time_ms_;
   };
   
 }  // namespace tictactoe
