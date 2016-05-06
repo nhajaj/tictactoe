@@ -19,7 +19,7 @@ namespace tictactoe {
     enum Player {NONE =  0, FIRST = 1, SECOND = 2};
     typedef ::std::pair<int, int> Move;
     ::std::vector<Move> allowed_moves() const;
-    double eval() const;
+    ::std::pair<double, bool> eval() const;
     Move get_best_move(Player player, int level, int time_ms = 86400000);
     ::std::string toString() const;
     void debug(const ::std::string &s) const;

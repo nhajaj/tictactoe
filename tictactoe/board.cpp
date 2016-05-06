@@ -49,8 +49,8 @@ namespace tictactoe {
     }
     int last = -1;
     for (int bb = 0; bb < 9; ++bb) {
-      if (macroboard[bb]) {
-        if (last < 0) {
+      if (macroboard[bb] == -1) {
+        if (last == -1) {
           last = bb;
         } else {
           last = -1;
@@ -212,7 +212,7 @@ namespace tictactoe {
   }
   
   pair<Board::Move, double> Board::get_first_move(int level, double prune_value) {
-    vector<pair<double, Board::Move>> evals;
+    vector<pair<pair<double, bool>, Board::Move>> evals;
     {
       vector<Board::Move> moves = allowed_moves();
       evals.reserve(moves.size());
@@ -224,16 +224,23 @@ namespace tictactoe {
         board_[move.first].pop(move.second);
       }
     }
-    sort(evals.begin(), evals.end(), greater<pair<double, Board::Move>>());
+    sort(evals.begin(), evals.end(), greater<pair<pair<double, bool>, Board::Move>>());
     pair<Board::Move, double> best(make_pair(make_pair(-1, -1), -2.));
     if (level > 0) {
       for (const auto& eval_move : evals) {
         const Move& move = eval_move.second;
-        board_[move.first].push(move.second, FIRST);
-        next_board_.push_back(move.first);
-        const pair<Board::Move, double> move_value = Board::get_second_move(level - 1, best.second);
-        next_board_.pop_back();
-        board_[move.first].pop(move.second);
+        pair<Board::Move, double> move_value;
+        if (eval_move.first.second) {
+          // done
+          move_value.first = eval_move.second;
+          move_value.second = eval_move.first.first;
+        } else {
+          board_[move.first].push(move.second, FIRST);
+          next_board_.push_back(move.second);
+          move_value = Board::get_second_move(level - 1, best.second);
+          next_board_.pop_back();
+          board_[move.first].pop(move.second);
+        }
         if (move_value.second > best.second) {
           best.first = move;
           best.second = move_value.second;
@@ -242,20 +249,21 @@ namespace tictactoe {
           }
         }
         if ((steady_clock::now() - start_time_) > milliseconds(remaining_time_ms_)) {
-          // debug("break");
+          debug("break");
+          debug(to_string((steady_clock::now() - start_time_).count()));
           break;
         }
       }
     } else {
       best.first = evals.front().second;
-      best.second = evals.front().first;
+      best.second = evals.front().first.first;
     }
     //debug("first " + to_string(level) + ", " + to_string(best.second));
     return best;
   }
   
   pair<Board::Move, double> Board::get_second_move(int level, double prune_value) {
-    vector<pair<double, Board::Move>> evals;
+    vector<pair<pair<double, bool>, Board::Move>> evals;
     {
       vector<Board::Move> moves = allowed_moves();
       evals.reserve(moves.size());
@@ -270,9 +278,18 @@ namespace tictactoe {
     if (level > 0) {
       for (const auto& eval_move : evals) {
         const Move& move = eval_move.second;
-        board_[move.first].push(move.second, SECOND);
-        const pair<Board::Move, double> move_value = Board::get_first_move(level - 1, best.second);
-        board_[move.first].pop(move.second);
+        pair<Board::Move, double> move_value;
+        if (eval_move.first.second) {
+          // done
+          move_value.first = eval_move.second;
+          move_value.second = eval_move.first.first;
+        } else {
+          board_[move.first].push(move.second, SECOND);
+          next_board_.push_back(move.second);
+          move_value = Board::get_first_move(level - 1, best.second);
+          next_board_.pop_back();
+          board_[move.first].pop(move.second);
+        }
         if (move_value.second < best.second) {
           best.first = move;
           best.second = move_value.second;
@@ -281,13 +298,14 @@ namespace tictactoe {
           }
         }
         if ((steady_clock::now() - start_time_) > milliseconds(remaining_time_ms_)) {
-          // debug("break" + to_string(best.first.first) + ", " + to_string(best.second));
+          debug("break " + to_string(best.first.first) + ", " + to_string(best.second));
+          debug(to_string((steady_clock::now() - start_time_).count()));
           break;
         }
       }
     } else {
       best.first = evals.front().second;
-      best.second = evals.front().first;
+      best.second = evals.front().first.first;;
     }
     //debug("second " + to_string(level) + ", " + to_string(best.second));
     return best;
@@ -325,15 +343,15 @@ namespace tictactoe {
     }
   }
   
-  double Board::eval() const {
+  pair<double, bool> Board::eval() const {
     Player win = winner();
     if (win == FIRST) {
-      return 1;
+      return make_pair(1., true);
     } else if (win == SECOND) {
-      return -1;
+      return make_pair(-1., true);
     }
     if (done()) {
-      return 0;
+      return make_pair(0., true);
     }
     double value = 0.00000001 * ((rand() % 100) - 50);
     pair<double, double> evals[9];
@@ -370,7 +388,7 @@ namespace tictactoe {
      debug(">>> eval= " + to_string(value) + "\n" + toString());
      }
      */
-    return value;
+    return make_pair(value, false);
   }
   
   string Board::toString() const {
@@ -407,7 +425,7 @@ namespace tictactoe {
     }
     
     out += "next: " + to_string(next_board_.back()) + "\n";
-    out += "eval: " + to_string(eval()) + "\n";
+    out += "eval: " + to_string(eval().first) + "\n";
     return out;
   }
   

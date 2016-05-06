@@ -87,6 +87,9 @@ namespace tictactoe {
     }
     
     void processCommand(const vector<string> &command) {
+      if (command.empty()) {
+        return;
+      }
       if (command[0] == "action") {
         auto point = action(command[1], stringToInt(command[2]));
         cout << "place_move " << point.first << " " << point.second << endl << flush;
