@@ -249,8 +249,8 @@ namespace tictactoe {
           }
         }
         if ((steady_clock::now() - start_time_) > milliseconds(remaining_time_ms_)) {
-          debug("break");
-          debug(to_string((steady_clock::now() - start_time_).count()));
+          // debug("break");
+          // debug(to_string((steady_clock::now() - start_time_).count()));
           break;
         }
       }
@@ -298,8 +298,8 @@ namespace tictactoe {
           }
         }
         if ((steady_clock::now() - start_time_) > milliseconds(remaining_time_ms_)) {
-          debug("break " + to_string(best.first.first) + ", " + to_string(best.second));
-          debug(to_string((steady_clock::now() - start_time_).count()));
+          // debug("break " + to_string(best.first.first) + ", " + to_string(best.second));
+          // debug(to_string((steady_clock::now() - start_time_).count()));
           break;
         }
       }
