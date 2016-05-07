@@ -78,8 +78,8 @@ namespace tictactoe {
     pair<int, int> getMove(int time) const {
       Board board(_field, _macroboard);
       // debug(board.toString());
-      const int depth = board.count() >= 17 ? 9 : 8;
-      const int millis = board.count() >= 17 ? (time * 3) / 4 : min(1000, time / 2);
+      const int depth = board.count() >= 35 ? 9 : 8;
+      const int millis = board.count() >= 20 ? min(2000, (time * 3) / 4) : min(1000, time / 2);
       Board::Move move = board.get_best_move((Board::Player)_botId, depth, millis);
       int i = move.first;
       int j = move.second;
