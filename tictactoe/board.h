@@ -23,6 +23,7 @@ namespace tictactoe {
     Move get_best_move(Player player, int level, int time_ms = 86400000);
     ::std::string toString() const;
     void debug(const ::std::string &s) const;
+    int count() const { return count_; }
     
     struct SmallBoard {
       int board = 0;
