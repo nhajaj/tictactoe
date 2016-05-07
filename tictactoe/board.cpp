@@ -156,7 +156,7 @@ namespace tictactoe {
   
   
   Board::Player Board::SmallBoard::calc_winner() {
-    static const array<int, 8> masks = {0x15, 0x540, 0x1500, 0x1041, 0x4104, 0x10410, 0x10101, 0x1110};
+    static const array<int, 8> masks = {0x15, 0x540, 0x15000, 0x1041, 0x4104, 0x10410, 0x10101, 0x1110};
     for (int m : masks) {
       if ((m & board) == m) {
         return FIRST;
