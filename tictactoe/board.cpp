@@ -202,30 +202,32 @@ namespace tictactoe {
     if (count_ == 0) {
       return Move(4, rand() % 9);
     }
-    if (count_ == 1) {
-      level = min(level, 1);
-    }
     
-    pair<Board::Move, double> best = (player == FIRST) ? get_first_move(level) : get_second_move(level);
+    pair<Board::Move, double> best = get_best_rec(player, level, player == FIRST ? 2. : -2);
     // debug("best move value: " + to_string(best.second));
     return best.first;
   }
   
-  pair<Board::Move, double> Board::get_first_move(int level, double prune_value) {
+#define OTHER(p) ((Player) (3 - p))
+  pair<Board::Move, double> Board::get_best_rec(Player player, int level, double prune_value) {
     vector<pair<pair<double, bool>, Board::Move>> evals;
     {
       vector<Board::Move> moves = allowed_moves();
       evals.reserve(moves.size());
       for (const auto& move : moves) {
-        board_[move.first].push(move.second, FIRST);
+        board_[move.first].push(move.second, player);
         next_board_.push_back(move.first);
         evals.push_back(make_pair(eval(), move));
         next_board_.pop_back();
         board_[move.first].pop(move.second);
       }
     }
-    sort(evals.begin(), evals.end(), greater<pair<pair<double, bool>, Board::Move>>());
-    pair<Board::Move, double> best(make_pair(make_pair(-1, -1), -2.));
+    if (player == FIRST) {
+      sort(evals.begin(), evals.end(), greater<pair<pair<double, bool>, Board::Move>>());
+    } else {
+      sort(evals.begin(), evals.end());
+    }
+    pair<Board::Move, double> best(make_pair(make_pair(-1, -1), (player == FIRST) ? -2. : 2.));
     if (level > 0) {
       for (const auto& eval_move : evals) {
         const Move& move = eval_move.second;
@@ -235,17 +237,27 @@ namespace tictactoe {
           move_value.first = eval_move.second;
           move_value.second = eval_move.first.first;
         } else {
-          board_[move.first].push(move.second, FIRST);
+          board_[move.first].push(move.second, player);
           next_board_.push_back(move.second);
-          move_value = Board::get_second_move(level - 1, best.second);
+          move_value = Board::get_best_rec(OTHER(player), level - 1, best.second);
           next_board_.pop_back();
           board_[move.first].pop(move.second);
         }
-        if (move_value.second > best.second) {
-          best.first = move;
-          best.second = move_value.second;
-          if (best.second > prune_value) {
-            break;
+        if (player == FIRST) {
+          if (move_value.second > best.second) {
+            best.first = move;
+            best.second = move_value.second;
+            if (best.second > prune_value) {
+              break;
+            }
+          }
+        } else {
+          if (move_value.second < best.second) {
+            best.first = move;
+            best.second = move_value.second;
+            if (best.second < prune_value) {
+              break;
+            }
           }
         }
         if ((steady_clock::now() - start_time_) > milliseconds(remaining_time_ms_)) {
@@ -261,70 +273,23 @@ namespace tictactoe {
     //debug("first " + to_string(level) + ", " + to_string(best.second));
     return best;
   }
-  
-  pair<Board::Move, double> Board::get_second_move(int level, double prune_value) {
-    vector<pair<pair<double, bool>, Board::Move>> evals;
-    {
-      vector<Board::Move> moves = allowed_moves();
-      evals.reserve(moves.size());
-      for (const auto& move : moves) {
-        board_[move.first].push(move.second, SECOND);
-        evals.push_back(make_pair(eval(), move));
-        board_[move.first].pop(move.second);
-      }
-    }
-    sort(evals.begin(), evals.end());
-    pair<Board::Move, double> best(make_pair(make_pair(-1, -1), 2.));
-    if (level > 0) {
-      for (const auto& eval_move : evals) {
-        const Move& move = eval_move.second;
-        pair<Board::Move, double> move_value;
-        if (eval_move.first.second) {
-          // done
-          move_value.first = eval_move.second;
-          move_value.second = eval_move.first.first;
-        } else {
-          board_[move.first].push(move.second, SECOND);
-          next_board_.push_back(move.second);
-          move_value = Board::get_first_move(level - 1, best.second);
-          next_board_.pop_back();
-          board_[move.first].pop(move.second);
-        }
-        if (move_value.second < best.second) {
-          best.first = move;
-          best.second = move_value.second;
-          if (best.second < prune_value) {
-            break;
-          }
-        }
-        if ((steady_clock::now() - start_time_) > milliseconds(remaining_time_ms_)) {
-          // debug("break " + to_string(best.first.first) + ", " + to_string(best.second));
-          // debug(to_string((steady_clock::now() - start_time_).count()));
-          break;
-        }
-      }
-    } else {
-      best.first = evals.front().second;
-      best.second = evals.front().first.first;;
-    }
-    //debug("second " + to_string(level) + ", " + to_string(best.second));
-    return best;
-    
-  }
+#undef OTHER
   
 #define WINNER(i) (board_[get<i>(m)].winner)
+#define WINNER_ROW (WINNER(0) && WINNER(0) == WINNER(1) && WINNER(0) == WINNER(2))
   Board::Player Board::winner() const {
     typedef ::std::tuple<int, int, int> Tri;
     static const array<Tri, 8> masks = { Tri(0, 1, 2), Tri(3, 4, 5), Tri(6, 7, 8),
       Tri(0, 3, 6), Tri(1, 4, 7), Tri(2, 5, 8),
       Tri(0, 4, 8), Tri(2, 4, 6)};
     for (auto& m : masks) {
-      if (WINNER(0) && WINNER(0) == WINNER(1) && WINNER(0) == WINNER(2)) {
+      if (WINNER_ROW) {
         return WINNER(0);
       }
     }
     return NONE;
   }
+#undef WINNER_ROW
 #undef WINNER
   
   bool Board::done() const {
@@ -337,9 +302,10 @@ namespace tictactoe {
   }
   
   namespace {
-    double eval_row_evals(const pair<double, double> *e123) {
+    inline double eval_row_evals(const pair<double, double> *e123) {
       static const double multiplier = 0.125;
-      return multiplier * (e123[0].first * e123[1].first * e123[2].first - e123[0].second * e123[1].second * e123[2].second);
+      return multiplier * (e123[0].first * e123[1].first * e123[2].first -
+                           e123[0].second * e123[1].second * e123[2].second);
     }
   }
   

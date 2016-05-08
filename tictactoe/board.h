@@ -47,8 +47,7 @@ namespace tictactoe {
   private:
     Player winner() const;
     bool done() const;
-    ::std::pair<Move, double> get_first_move(int level, double prune_value = 2.);
-    ::std::pair<Move, double> get_second_move(int level, double prune_value = -2.);
+    ::std::pair<Move, double> get_best_rec(Player player, int level, double prune_value);
     
     
     SmallBoard board_[9];
