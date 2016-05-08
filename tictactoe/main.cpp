@@ -81,9 +81,7 @@ namespace tictactoe {
       // debug(board.toString());
       int depth, millis;
       if (time_limit) {
-        if (board.count() >= 35 && time > 5000) {
-          depth = 9;
-        } else if (board.count() < 20) {
+        if (board.count() < 20 || time < 2000) {
           depth = 7;
         } else {
           depth = 8;
