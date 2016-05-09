@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -17,6 +18,7 @@ using ::std::min;
 using ::std::pair;
 using ::std::string;
 using ::std::stringstream;
+using ::std::to_string;
 using ::std::transform;
 using ::std::vector;
 
@@ -75,23 +77,23 @@ namespace tictactoe {
       return getMove(time);
     }
     
-    pair<int, int> getMove(int time) const {
-      Board board(_field, _macroboard);
+    pair<int, int> getMove(int time) {
+      board_.reset(new Board(_field, _macroboard));
       const bool time_limit = true;
       // debug(board.toString());
       int depth, millis;
       if (time_limit) {
-        if (board.count() < 20 || time < 2000) {
+        if (board_->count() < 5 || time < 2000) {
           depth = 7;
         } else {
           depth = 8;
         }
         millis = (time * 3) / 4;
       } else {
-        depth = 7;
+        depth = 9;
         millis = 1000000000;
       }
-      Board::Move move = board.get_best_move((Board::Player)_botId, depth, millis);
+      auto move = board_->get_best_move((Board::Player)_botId, depth, millis);
       int i = move.first;
       int j = move.second;
       
@@ -106,6 +108,8 @@ namespace tictactoe {
       if (command[0] == "action") {
         auto point = action(command[1], stringToInt(command[2]));
         cout << "place_move " << point.first << " " << point.second << endl << flush;
+        debug(board_->toString());
+        debug("move " + to_string(_move) + ": " + to_string(point.first) + ", " + to_string(point.second));
       }
       else if (command[0] == "update") {
         update(command[1], command[2], command[3]);
@@ -176,6 +180,7 @@ namespace tictactoe {
     int _move;
     vector<int> _macroboard;
     vector<int> _field;
+    ::std::auto_ptr<Board> board_;
   };
   
 }  // namespace tictactoe

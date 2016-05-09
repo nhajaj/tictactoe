@@ -128,7 +128,7 @@ namespace tictactoe {
       sum_pair(row_values[row_mask & (d | d >> 6 | d >> 12)], &value);
       const int diag2_mask = 0x3330;
       d = sb.board & diag2_mask;
-      sum_pair(row_values[row_mask & (d >> 4 | ((d >> 6) & 0xc) | ((d >> 8) & 0x30))], &value);
+      sum_pair(row_values[((d >> 4) & 0x3) | ((d >> 6) & 0xc) | ((d >> 8) & 0x30)], &value);
       return value;
     }
     
@@ -200,11 +200,12 @@ namespace tictactoe {
     start_time_ = steady_clock::now();
     remaining_time_ms_ = time_ms;
     if (count_ == 0) {
-      return Move(4, rand() % 9);
+      return Move(4, 4);
     }
     
     pair<Board::Move, double> best = get_best_rec(player, level, player == FIRST ? 2. : -2);
     // debug("best move value: " + to_string(best.second));
+    last_value_ = best.second;
     return best.first;
   }
   
@@ -392,6 +393,7 @@ namespace tictactoe {
     
     out += "next: " + to_string(next_board_.back()) + "\n";
     out += "eval: " + to_string(eval().first) + "\n";
+    out += "last full eval: " + to_string(last_value_) + "\n";
     return out;
   }
   

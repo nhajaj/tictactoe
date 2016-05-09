@@ -55,6 +55,7 @@ namespace tictactoe {
     int count_;
     ::std::chrono::steady_clock::time_point start_time_;
     int remaining_time_ms_;
+    double last_value_ = 0;
   };
   
 }  // namespace tictactoe
